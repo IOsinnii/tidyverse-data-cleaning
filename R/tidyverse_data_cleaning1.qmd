@@ -1,0 +1,109 @@
+---
+title: "Tidyverse data cleaning"
+subtitle: "Coursera-course-project" 
+title-block-banner: "#f0f3f5"
+title-block-banner-color: "black"
+author: "Ivan Osinnii"
+date: "25 June 2024"
+format: html
+code-fold: true
+editor: visual
+toc: true
+toc-location: left
+number-sections: true
+fig-cap-location: margin
+css: style.css
+---
+
+# Load necessary libraries
+
+```{r}
+library(tidyverse) 
+library(here) 
+library(readr) 
+library(DescTools) 
+library(RColorBrewer) 
+library(gridExtra)
+```
+
+# Read the data and pre-clean it
+
+```{r}
+getwd()
+coverage <- read_csv('./../input/healthcare-coverage.csv', skip = 2) 
+coverage <- na.omit(coverage)
+
+spending <- read_csv('./../input/healthcare-spending.csv', skip =2) 
+spending <- na.omit(spending)
+```
+
+# Read the data
+```{r}
+
+coverage <- read_csv('./../input/tidy_healthcare_coverage.csv')
+spending <- read_csv('./../input/tidy_spending_clean_corrected.csv')
+```
+
+## View the structure of the datasets
+
+Assuming both datasets have a common key for merging, e.g., 'State' or 'Year' Check for common columns
+
+```{r}
+glimpse(coverage)
+glimpse(spending)
+common_columns <- intersect(names(coverage), names(spending))
+print(common_columns)
+```
+
+Merge the datasets on the common key
+
+```{r}
+merged_data <- left_join(coverage, spending, by = "Location") # Replace 'common_key' with the actual column name
+
+```
+
+## Subset columns for 2013 and 2014 year. Write intermediate datasets
+
+```{r}
+
+merged_data_2013 <- merged_data %>% 
+  select(Location, Total_2013, Total_Health_Spending_2013)
+write.csv(merged_data_2013, "./../input/merged_data_2013.csv",row.names = TRUE)
+
+merged_data_2014 <- merged_data %>% 
+  select(Location, Total_2014, Total_Health_Spending_2014)
+write.csv(merged_data_2014, "./../input/merged_data_2014.csv")
+
+```
+
+# Analyze the relationship between healthcare 2013s coverage and healthcare spending
+
+```{r}
+plot <- ggplot(merged_data_2013, 
+  aes(x = Total_2013, y = Total_Health_Spending_2013)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  # scale_color_manual(values = colorRampPalette(brewer.pal(9, "Reds"))(num_locations)) +  # Red palette accommodating all data points
+  labs(title = "Total 2013 vs. Total Health Spending 2013",
+       x = "Total Healthcare Coverage 2013",
+       y = "Total Health Spending 2013")
+```
+
+## Analyze the relationship between healthcare 2014s coverage and healthcare spending
+
+```{r}
+plot2 <- ggplot(merged_data_2014, 
+               aes(x = Total_2014, y = Total_Health_Spending_2014)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  # scale_color_manual(values = colorRampPalette(brewer.pal(9, "Reds"))(num_locations)) +  # Red palette accommodating all data points
+  labs(title = "Total 2014 vs. Total Health Spending 2014",
+       x = "Total Healthcare Coverage 2014",
+       y = "Total Health Spending 2014")
+```
+
+```{r}
+grid.arrange(plot, plot2, ncol = 2) # the correlation looks similar
+```
+
+#Conclusion It looks like the relationship between both parameters is linear in both 2013/2024, but there's more Total Health Spending in 2014 than in 2013
